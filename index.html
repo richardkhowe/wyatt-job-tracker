@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JobSearchBot · Wyatt</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --paper: #fffdf8;
+      --ink: #1c1917;
+      --muted: #6b6459;
+      --line: #e7e0d4;
+      --pursue: #166534;
+      --apply: #1d4ed8;
+      --maybe: #a16207;
+      --skip: #9f1239;
+      --out: #57534e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      padding: 0 32px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .tabs button {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .tabs button.on {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+      font-weight: 650;
+    }
+    .tabs .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    header {
+      padding: 28px 32px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    .kicker {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    h1 { font-size: 28px; font-weight: 600; margin: 0 0 6px; }
+    .sub { color: var(--muted); margin: 0; font-size: 15px; }
+    .attn {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #bbf7d0;
+      border: 1px solid #4ade80;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: #14532d;
+    }
+    .attn.show { display: block; }
+    .banner {
+      margin: 16px 32px 0;
+      padding: 10px 14px;
+      background: #fef3c7;
+      border: 1px solid #f6e05e;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    select, input[type="search"], input[type="number"] {
+      border: 1px solid var(--line);
+      background: white;
+      padding: 8px 10px;
+      font: inherit;
+    }
+    input[type="search"] { min-width: 220px; }
+    input[type="number"] {
+      width: 72px;
+      padding: 6px 8px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+    .bot-score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+    .revised { color: #1d4ed8; }
+    table { width: 100%; border-collapse: collapse; background: var(--paper); }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      background: #faf7f1;
+      position: sticky;
+      top: 0;
+    }
+    th:hover { color: var(--ink); }
+    th.sorted { color: var(--ink); }
+    th.sorted::after { content: " ▾"; }
+    th.sorted.asc::after { content: " ▴"; }
+    .score { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 20px; }
+    .band {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      display: inline-block;
+    }
+    .pursue { color: var(--pursue); background: #dcfce7; }
+    .apply { color: var(--apply); background: #dbeafe; }
+    .maybe { color: var(--maybe); background: #fef3c7; }
+    .skip { color: var(--skip); background: #ffe4e6; }
+    .out { color: var(--out); background: #e7e5e4; }
+    .title { font-weight: 600; }
+    .why { color: var(--muted); font-size: 14px; max-width: 280px; }
+    a { color: #1d4ed8; }
+    .checks { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; color: var(--muted); }
+    .actions {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .actions label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 4px 0;
+      cursor: pointer;
+    }
+    .actions label.discard { color: #9f1239; font-weight: 650; }
+    td.posted { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .actions label.applied { color: #166534; font-weight: 650; }
+    .ghost {
+      border: 1px solid var(--line);
+      background: white;
+      padding: 6px 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+    footer, .pad {
+      padding: 18px 32px 40px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .wrap { overflow-x: auto; margin: 0 32px 12px; border: 1px solid var(--line); }
+    .empty { padding: 28px 14px; text-align: center; color: var(--muted); }
+    a.pdf {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 650;
+      text-decoration: none;
+      background: #1c1917;
+      color: #fffdf8 !important;
+      padding: 5px 10px;
+      display: inline-block;
+    }
+    .resume-cell { white-space: nowrap; }
+    h2 { font-size: 20px; font-weight: 600; margin: 28px 32px 10px; }
+    h2 .count {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+    .radio-row { display:flex; gap:16px; margin:6px 0 4px; align-items:center; }
+    .radio-row label { font-weight:500; }
+    .section-note { margin: 0 32px 10px; color: var(--muted); font-size: 14px; }
+
+    .draft-banner { background: #eef2ff; border-color: #c7d2fe; }
+    .gate-panel {
+      margin: 12px 32px 18px;
+      padding: 8px 0 12px;
+      border: 1px solid #fecdd3;
+      background: #fff1f2;
+    }
+    .gate-panel h2 { margin-top: 12px; }
+    #save-draft:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    tr.new-run td { background: #ede9fe; }
+    tr.new-run td:first-child { box-shadow: inset 4px 0 0 #7c3aed; }
+    .new-tag {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 7px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #5b21b6;
+      background: #ddd6fe;
+      vertical-align: middle;
+    }
+    .toolbar .new-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--ink);
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .rules-page { max-width: 980px; }
+    .rules-table { width: calc(100% - 64px); margin: 16px 32px 32px; border-collapse: collapse; background: var(--paper); }
+    .rules-table th, .rules-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .rules-table th { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: #faf7f1; position: static; cursor: default; }
+    .rules-table td.n { width: 48px; font-variant-numeric: tabular-nums; font-weight: 650; }
+    .rules-table td.rule { font-size: 15px; line-height: 1.4; max-width: 720px; }
+    .rules-table td.toggle { width: 72px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; white-space: nowrap; }
+    .rules-table tr.group-row td { background: #faf7f1; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+    .rules-table label { margin-right: 10px; cursor: pointer; }
+    .hidden { display: none; }
+    .score-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.7fr);
+      gap: 20px;
+      padding: 20px 32px 40px;
+      align-items: start;
+    }
+    @media (max-width: 980px) { .score-layout { grid-template-columns: 1fr; } }
+    .weights { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); }
+    .weights th, .weights td { text-align: center; white-space: nowrap; }
+    .weights th:first-child, .weights td:first-child { text-align: left; }
+    .weights .pending-head { background: #dcfce7; }
+    .up { color: #166534; font-weight: 650; }
+    .down { color: #9f1239; font-weight: 650; }
+    .rationale {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 16px 18px;
+      min-height: 140px;
+    }
+    .rationale h3 { margin: 0 0 8px; font-size: 16px; }
+    .rationale p { margin: 0; color: var(--muted); font-size: 14px; }
+    .rationale ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+    .radios-top {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      margin-top: 8px;
+      font-weight: 650;
+    }
+    .radios-top label { cursor: pointer; }
+    .accept { color: #166534; }
+    .reject { color: #9f1239; }
+  
+    .input-page { padding-bottom: 48px; }
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 18px;
+      margin: 0 32px 8px;
+    }
+    @media (max-width: 800px) { .input-grid { grid-template-columns: 1fr; } }
+    .field { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
+    .field.span2 { grid-column: 1 / -1; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="url"],
+    .field input[type="number"],
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 8px 10px;
+      font: inherit;
+      color: var(--ink);
+    }
+    .field textarea { min-height: 88px; resize: vertical; font-family: inherit; }
+    .field textarea.tall { min-height: 140px; }
+    .checks-edit, .flag-edit { margin: 0 32px 4px; }
+    .check-row, .flag-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .check-row span, .flag-row span { color: var(--muted); min-width: 22px; padding-top: 8px; }
+    .check-row input, .flag-row input { flex: 1; border: 1px solid var(--line); padding: 8px 10px; font: inherit; }
+    .cat-block {
+      margin: 0 32px 10px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      padding: 10px 12px;
+    }
+    .cat-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .cat-head .pri {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+      min-width: 1.6em;
+    }
+    .cat-head input { flex: 1; border: 1px solid var(--line); padding: 6px 8px; font: inherit; }
+    .cat-block textarea { width: 100%; min-height: 52px; border: 1px solid var(--line); padding: 8px; font: inherit; }
+    .boards {
+      margin: 0 32px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 22px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 14px;
+    }
+    .boards label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+    .save-bar {
+      position: sticky;
+      bottom: 0;
+      margin: 24px 0 0;
+      padding: 12px 32px;
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .save-bar button.primary {
+      background: #1c1917;
+      color: #fffdf8;
+      border: none;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .file-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .file-name { color: var(--muted); }
+    .weights-edit { margin: 0 32px 8px; overflow-x: auto; }
+  
+
+  </style>
+</head>
+<body>
+  <nav class="tabs">
+    <button type="button" class="on" data-tab="input">Input</button>
+    <button type="button" data-tab="draft">Draft Input</button>
+    <button type="button" data-tab="listings">Listings</button>
+    <button type="button" data-tab="scoring">Scoring <span class="dot hidden" id="score-dot"></span></button>
+    <button type="button" data-tab="rules">Rules</button>
+  </nav>
+
+  
+  <section id="tab-input" class="input-page">
+    <header>
+      <p class="kicker">JobSearchBot · setup</p>
+      <h1>Job seeker input</h1>
+      <p class="sub">This is what the hunt, scoring, and tailored resumes run on. Isolated Wyatt client — listings empty until Wyatt’s profile exists.</p>
+    </header>
+    <div class="banner">Beta mock. Saving stays in this browser. A real product would store this as the seeker’s workspace.</div>
+
+    <h2>Profile</h2>
+    <p class="section-note">Who is searching. Dual citizenship is a plus when a listing cares, not a reason to default the hunt to Canada.</p>
+    <div class="input-grid">
+      <div class="field"><label>Full name</label><input type="text" id="in-name" value="Wyatt" /></div>
+      <div class="field"><label>Email</label><input type="email" id="in-email" value="" /></div>
+      <div class="field"><label>Phone</label><input type="text" id="in-phone" value="" /></div>
+      <div class="field"><label>Home base</label><input type="text" id="in-home" value="New York, NY" /></div>
+      <div class="field"><label>Portfolio</label><input type="url" id="in-portfolio" value="" /></div>
+      <div class="field"><label>Citizenship</label><input type="text" id="in-citizen" value="Dual US / Canadian" /></div>
+    </div>
+
+    <h2>Standard resume</h2>
+    <p class="section-note">One-pager used as the base. Pursue listings get a revised PDF with the same facts, summary and bullets reordered for that employer.</p>
+    <div class="input-grid">
+      <div class="field span2">
+        <label>Upload resume (PDF)</label>
+        <div class="file-row">
+          <input type="file" id="in-resume" accept=".pdf,application/pdf" />
+          <span class="file-name" id="in-resume-name">No resume on file</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Ideal role</h2>
+    <p class="section-note">North star. After reading a posting, the hire should spend most of their time on the real customer experience.</p>
+    <div class="input-grid">
+      <div class="field span2"><label>Role description</label><textarea class="tall" id="in-ideal">Senior Product Manager on financial-services applications that improve the customer/client-facing experience across the full lifecycle (new-client solicitation/onboarding through mature client/account management). Core work: UX/UI, customer journeys, user intent/demographics/interests analytics, journey pain points, acquisition and retention, revenue and profit growth, personalization, visualization of client behavior, and removing obstacles to build better client-facing products.
+
+Not an engineer or data scientist, though technically literate and exceptionally strong with AI development tools. High-level AI product work in financial services (LSEG Workspace, Microsoft Copilot / Teams AI Agents) is a plus. Roles that require coding, a CS degree, or ML infrastructure are a poor fit.</textarea></div>
+      <div class="field span2"><label>Titles and seniority (hunt order)</label><textarea id="in-titles">Senior Product Manager
+Lead Product Manager
+Principal Product Manager
+Group Product Manager
+Director of Product / Director of Product Management
+Product Lead
+SPM variants: User Experience, Consumer, Digital, Mobile, Web, Growth, Engagement, Customer/Member/Client/Digital Experience, Marketplace, Personalization, Onboarding, AI Experiences, Conversational AI
+A plain Product Manager title counts when the work and pay look senior.
+Do not prioritize Associate PM, Junior PM, or entry-level.</textarea></div>
+    </div>
+
+    <h2>Alignment gate</h2>
+    <p class="section-note">Fail this and the listing is out, even at a favorite company.</p>
+    <div class="input-grid">
+      <div class="field span2"><label>Primary gate</label><textarea id="in-gate">The role must signal that the hire spends a majority of time thinking through and managing products that deal with the experience real (external) customers go through. Internal tools, employee-facing platforms, and ops/infra PMs fail.</textarea></div>
+    </div>
+
+    <h2>Great-job checklist</h2>
+    <p class="section-note">A great listing hits at least 4 of 12. More hits rank higher.</p>
+    <div class="checks-edit"><div class="check-row"><span>1.</span><input type="text" data-check="1" value="Owns a customer-facing web or mobile product" /></div>
+<div class="check-row"><span>2.</span><input type="text" data-check="2" value="Works closely with product designers or UX researchers" /></div>
+<div class="check-row"><span>3.</span><input type="text" data-check="3" value="Owns or significantly influences UI/UX" /></div>
+<div class="check-row"><span>4.</span><input type="text" data-check="4" value="Focuses on improving a customer journey" /></div>
+<div class="check-row"><span>5.</span><input type="text" data-check="5" value="Owns product strategy and roadmap" /></div>
+<div class="check-row"><span>6.</span><input type="text" data-check="6" value="Uses customer research or behavioral data to make decisions" /></div>
+<div class="check-row"><span>7.</span><input type="text" data-check="7" value="Measures engagement, conversion, retention, adoption, or satisfaction" /></div>
+<div class="check-row"><span>8.</span><input type="text" data-check="8" value="Builds features used directly by customers" /></div>
+<div class="check-row"><span>9.</span><input type="text" data-check="9" value="Includes mobile app or web application ownership" /></div>
+<div class="check-row"><span>10.</span><input type="text" data-check="10" value="Uses AI to improve an end-user experience" /></div>
+<div class="check-row"><span>11.</span><input type="text" data-check="11" value="Involves product discovery and experimentation" /></div>
+<div class="check-row"><span>12.</span><input type="text" data-check="12" value="Gives the PM meaningful ownership over what gets built and why" /></div></div>
+
+    <h2>Red flags</h2>
+    <p class="section-note">Required coding, CS degree, or hands-on engineering is an auto-no. Other lines are a strong downrank unless the job is still clearly customer-facing. AI in the end-user experience is a plus; ML infrastructure is not.</p>
+    <div class="flag-edit"><div class="flag-row"><span>•</span><input type="text" data-flag="0" value="Highly technical PM" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="1" value="Deep distributed systems knowledge" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="2" value="Strong coding background required (auto-no)" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="3" value="Computer Science degree required (auto-no)" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="4" value="Hands-on software engineering experience required (auto-no)" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="5" value="Developer platform" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="6" value="Infrastructure platform" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="7" value="Platform engineering" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="8" value="API-first product" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="9" value="DevOps" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="10" value="SRE" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="11" value="Cloud infrastructure" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="12" value="Data infrastructure" /></div>
+<div class="flag-row"><span>•</span><input type="text" data-flag="13" value="ML infrastructure" /></div></div>
+
+    <h2>Pay and location</h2>
+    <p class="section-note">Office or typical hybrid still needs a Manhattan or Jersey City desk. True remote US drops that. Infrequent travel (monthly or less, quarterly, or occasional onsite) is treated as remote. Unspecified hybrid is not.</p>
+    <div class="input-grid">
+      <div class="field"><label>Base min ($000s)</label><input type="number" id="in-min" value="150" /></div>
+      <div class="field"><label>Base max</label><input type="text" id="in-max" value="None (no upper cap)" disabled /></div>
+      <div class="field span2"><label>Office / hybrid desks</label><input type="text" id="in-office" value="Manhattan or Jersey City" /></div>
+      <div class="field span2"><label>If remote is allowed</label><input type="text" id="in-remote" value="Drop the office constraint and widen geography" /></div>
+      <div class="field span2"><label>Infrequent hybrid</label><input type="text" id="in-hybrid-light" value="If the posting says onsite is monthly or less, quarterly, or occasional, treat as remote. If it only says hybrid, still require Manhattan or Jersey City. Do not guess." /></div>
+      <div class="field"><label>LinkedIn applicants max (Pursue)</label><input type="number" id="in-li-apps" value="100" min="1" step="1" /></div>
+      <div class="field"><label></label><span class="section-note" style="margin:8px 0 0">If a Pursue listing came from LinkedIn and more people than this have applied, it is Out (score 0). Wyatt’s number is 100 (cloned until Wyatt’s profile exists).</span></div>
+      <div class="field span2"><label>Treat Reposted Jobs as New entries?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="in-repost-new" id="in-repost-new-yes" value="yes" /> Yes</label>
+          <label><input type="radio" name="in-repost-new" id="in-repost-new-no" value="no" checked /> No</label>
+        </div>
+        <span class="section-note">Wyatt’s answer is No (cloned until Wyatt’s profile exists). If the posting says Reposted, score it 0 / Out. Yes would treat a repost as a fresh listing.</span>
+      </div>
+    </div>
+
+    <h2>Hunt sources</h2>
+    <p class="section-note">Company career pages are primary. LinkedIn needs the seeker signed in. Built In, Indeed, Wellfound, and Wall Street Friends (jobs.wallstreetfriends.org) can be searched without an account unless a listing itself requires login.</p>
+    <div class="boards">
+      <label><input type="checkbox" checked /> Company career pages</label>
+      <label><input type="checkbox" checked /> LinkedIn</label>
+      <label><input type="checkbox" checked /> Built In</label>
+      <label><input type="checkbox" checked /> Indeed</label>
+      <label><input type="checkbox" checked /> Wellfound</label>
+      <label><input type="checkbox" checked /> Wall Street Friends</label>
+    </div>
+
+    <h2>Company watchlist</h2>
+    <p class="section-note">Priority order is search and Company Match weight. Number 1 is hunted first. Insurance is parked last until confirmed.</p>
+    <div class="cat-block">
+      <div class="cat-head"><span class="pri">1.</span><input type="text" data-cat-name="1" value="Banking, Credit Cards & Consumer Finance" /></div>
+      <textarea data-cat-cos="1">American Express, Capital One, JPMorgan Chase, SoFi, Chime, Current, Dave, Varo, Bank of America, Wells Fargo, Citi, Discover, U.S. Bank, PNC, Truist, TD Bank, BMO, Citizens, Fifth Third Bank, Ally, Santander, Barclays, Royal Bank of Canada</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">2.</span><input type="text" data-cat-name="2" value="Artificial Intelligence" /></div>
+      <textarea data-cat-cos="2">OpenAI, Anthropic, Perplexity, Microsoft Copilot</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">3.</span><input type="text" data-cat-name="3" value="Investing, Brokerage & Wealth Management" /></div>
+      <textarea data-cat-cos="3">Robinhood, Coinbase, Acorns, Betterment, Wealthfront, Public, Webull, Fidelity, Charles Schwab, Vanguard, Morgan Stanley, UBS, LPL Financial, Interactive Brokers</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">4.</span><input type="text" data-cat-name="4" value="Payments, Fintech & Financial Technology" /></div>
+      <textarea data-cat-cos="4">PayPal, Block, Stripe, Plaid, Affirm, Klarna, Mastercard, Visa, Brex, Ramp, Mercury, Toast, Rippling, Wise, Revolut</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">5.</span><input type="text" data-cat-name="5" value="Asset Management" /></div>
+      <textarea data-cat-cos="5">BlackRock, State Street, BNY, Northern Trust, T. Rowe Price, Franklin Templeton, Invesco, Nuveen, PGIM, Neuberger Berman, AllianceBernstein</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">6.</span><input type="text" data-cat-name="6" value="Private Equity, Alternatives & Private Markets" /></div>
+      <textarea data-cat-cos="6">Blackstone, KKR, Apollo Global Management, Brookfield Asset Management, Ares Management, Carlyle, Blue Owl Capital, Oaktree Capital Management, Ares Wealth Management Solutions, Citadel</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">7.</span><input type="text" data-cat-name="7" value="Exchanges, Market Data & Financial Information" /></div>
+      <textarea data-cat-cos="7">Nasdaq, Intercontinental Exchange (ICE), CME Group, S&P Global, Morningstar, FactSet, MSCI</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">8.</span><input type="text" data-cat-name="8" value="Big Tech & Consumer Technology" /></div>
+      <textarea data-cat-cos="8">Apple, Google, Meta, Microsoft, Amazon, LinkedIn, Reddit</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">9.</span><input type="text" data-cat-name="9" value="E-commerce & Marketplaces" /></div>
+      <textarea data-cat-cos="9">Shopify</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">10.</span><input type="text" data-cat-name="10" value="Media, Entertainment & Content" /></div>
+      <textarea data-cat-cos="10">Spotify, Netflix, Pinterest, The New York Times</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">11.</span><input type="text" data-cat-name="11" value="Enterprise SaaS & Productivity" /></div>
+      <textarea data-cat-cos="11">Figma, Canva, Notion, Dropbox, Slack, DocuSign, Squarespace, Asana, monday.com, Rippling, Adobe</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">12.</span><input type="text" data-cat-name="12" value="Travel, Hospitality & Transportation" /></div>
+      <textarea data-cat-cos="12">Airbnb, Uber, Lyft, Expedia Group, Booking.com, Tripadvisor, Marriott, Hilton, Delta Air Lines, United Airlines</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">13.</span><input type="text" data-cat-name="13" value="Consumer, Sports, Fitness & Lifestyle" /></div>
+      <textarea data-cat-cos="13">Nike, Peloton, Strava, AllTrails, Fanatics, DraftKings, Duolingo</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">14.</span><input type="text" data-cat-name="14" value="Ticketing & Experiences" /></div>
+      <textarea data-cat-cos="14">StubHub</textarea>
+    </div>
+<div class="cat-block">
+      <div class="cat-head"><span class="pri">15.</span><input type="text" data-cat-name="15" value="Insurance & Financial Protection (parked last)" /></div>
+      <textarea data-cat-cos="15">Prudential Financial, Fidelity National Financial, New York Life, Northwestern Mutual, MassMutual</textarea>
+    </div>
+
+    <h2>Starting score weights</h2>
+    <p class="section-note">Baseline for a new search. Later changes go through the Scoring tab after a pattern of Revised Scores.</p>
+    <div class="weights-edit">
+      <table>
+        <thead><tr><th>Weight</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr><td>Role Quality Match</td><td>35</td></tr>
+          <tr><td>Domain Match</td><td>20</td></tr>
+          <tr><td>Company Match</td><td>20</td></tr>
+          <tr><td>Seniority Match</td><td>10</td></tr>
+          <tr><td>Compensation Match</td><td>10</td></tr>
+          <tr><td>Location Match</td><td>5</td></tr>
+          <tr><td>Tech-PM Penalty</td><td>−10</td></tr>
+          <tr><td>Platform / infrastructure Penalty</td><td>−20</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="save-bar">
+      <button class="primary" type="button" id="save-input">Save profile</button>
+      <span id="save-msg">Edits stay in this browser until you save.</span>
+    </div>
+  </section>
+
+  <section id="tab-draft" class="input-page hidden">
+    <header>
+      <p class="kicker">Product sketch · not connected</p>
+      <h1>Draft Input</h1>
+      <p class="sub">What a new seeker would fill in so the bot can hunt, score, and tailor resumes. This tab does not feed Listings or Scoring. Wyatt’s hunt stays on Input.</p>
+    </header>
+    <div class="banner draft-banner">Layout only. Three different questions, kept apart on purpose: hard outs throw a listing away, the checklist is the craft bar, and the score ranks what survived.</div>
+
+    <h2>1. Who is hunting</h2>
+    <p class="section-note">Identity and materials. The resume is what we rewrite for every Pursue listing (same facts, different order).</p>
+    <div class="input-grid">
+      <div class="field"><label>Full name</label><input type="text" id="draft-name" placeholder="Jane Chen" /></div>
+      <div class="field"><label>Email</label><input type="email" id="draft-email" placeholder="jane@email.com" /></div>
+      <div class="field"><label>Where they live</label><input type="text" id="draft-home" placeholder="Brooklyn, NY" /></div>
+      <div class="field"><label>Work authorization</label><input type="text" id="draft-auth" placeholder="US citizen, no sponsorship needed" /></div>
+      <div class="field"><label>LinkedIn</label><input type="url" id="draft-li" placeholder="https://linkedin.com/in/…" /></div>
+      <div class="field"><label>Portfolio or site</label><input type="url" id="draft-site" placeholder="https://" /></div>
+      <div class="field span2">
+        <label>Resume (PDF)</label>
+        <div class="file-row">
+          <input type="file" id="draft-resume" accept=".pdf,application/pdf" />
+          <span class="file-name">One page works best for tailored Pursue PDFs.</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>2. The job they want</h2>
+    <p class="section-note">The north star is the most important box on this page. If a posting fails it, favorite companies do not save it.</p>
+    <div class="input-grid">
+      <div class="field span2"><label>North star (primary gate)</label><textarea class="tall" id="draft-north" placeholder="In one or two sentences: after reading a posting, should this hire spend most of their time on a real customer/user experience? Say what that means in their field. Example: products real customers use on web or mobile, not internal tools or infra."></textarea></div>
+      <div class="field span2"><label>Titles, hunt order (one per line)</label><textarea id="draft-titles" placeholder="Senior Product Manager
+Lead Product Manager
+Principal Product Manager
+Director of Product
+Skip Associate / Junior / entry-level"></textarea></div>
+      <div class="field"><label>Lowest seniority to keep</label><input type="text" id="draft-seniority" placeholder="Senior (plain PM only if the work and pay look senior)" /></div>
+      <div class="field"><label>Domain they are strongest in</label><input type="text" id="draft-domain" placeholder="Consumer finance, marketplace, health, etc." /></div>
+    </div>
+
+    <div class="gate-panel">
+      <h2>3. Hard outs</h2>
+      <p class="section-note" style="margin-left:0">These zero the score (band Out). They are not the checklist. Oscar Health hitting 12/12 and still going Out is this layer, not a scoring bug.</p>
+      <div class="input-grid" style="margin-left:0;margin-right:0">
+        <div class="field"><label>Base pay floor ($000s)</label><input type="number" id="draft-min" placeholder="150" /></div>
+        <div class="field"><label>Base pay ceiling</label><input type="text" id="draft-max" value="None. Do not cap the top." disabled /></div>
+        <div class="field span2"><label>Office or typical hybrid must be in</label><input type="text" id="draft-office" placeholder="Manhattan or Jersey City" /></div>
+        <div class="field span2"><label>If the role is truly remote</label><input type="text" id="draft-remote" value="Drop the office constraint and widen geography" /></div>
+        <div class="field span2"><label>Infrequent hybrid</label><input type="text" id="draft-hybrid" value="If the posting says onsite is monthly or less, quarterly, or occasional, treat as remote. If it only says hybrid, still require the office cities above. Do not guess." /></div>
+        <div class="field"><label>LinkedIn applicants max (Pursue)</label><input type="number" id="draft-li-apps" value="100" min="1" step="1" /></div>
+        <div class="field"><label></label><span class="section-note" style="margin:8px 0 0">Only LinkedIn shows applicant counts. If a Pursue listing came from LinkedIn and applications exceed this number, score it 0 / Out. Wyatt uses 100 (cloned until Wyatt’s profile exists).</span></div>
+        <div class="field span2"><label>Treat Reposted Jobs as New entries?</label>
+          <div class="radio-row">
+            <label><input type="radio" name="draft-repost-new" id="draft-repost-new-yes" value="yes" /> Yes</label>
+            <label><input type="radio" name="draft-repost-new" id="draft-repost-new-no" value="no" checked /> No</label>
+          </div>
+          <span class="section-note">No means a posting marked Reposted is Out (score 0). Yes treats it as a new listing. Wyatt uses No (cloned until Wyatt’s profile exists). Not wired on this draft tab.</span>
+        </div>
+        <div class="field span2"><label>Auto-no (required in the posting = Out)</label><textarea id="draft-autono" placeholder="Coding required
+CS degree required
+Hands-on software engineering required
+Visa sponsorship required"></textarea></div>
+      </div>
+    </div>
+
+    <h2>4. What great looks like</h2>
+    <p class="section-note">This is the craft bar, not the Out gate. Below the minimum, we do not keep the listing. More hits rank higher inside Role Quality.</p>
+    <div class="input-grid">
+      <div class="field"><label>Minimum checklist hits</label><input type="number" id="draft-checkmin" value="4" /></div>
+      <div class="field"><label>Checklist size</label><input type="text" value="12 (editable lines below)" disabled /></div>
+    </div>
+    <div class="checks-edit">
+      <div class="check-row"><span>1.</span><input type="text" value="Owns a customer-facing web or mobile product" /></div>
+      <div class="check-row"><span>2.</span><input type="text" value="Works closely with product designers or UX researchers" /></div>
+      <div class="check-row"><span>3.</span><input type="text" value="Owns or significantly influences UI/UX" /></div>
+      <div class="check-row"><span>4.</span><input type="text" value="Focuses on improving a customer journey" /></div>
+      <div class="check-row"><span>5.</span><input type="text" value="Owns product strategy and roadmap" /></div>
+      <div class="check-row"><span>6.</span><input type="text" value="Uses customer research or behavioral data to make decisions" /></div>
+      <div class="check-row"><span>7.</span><input type="text" value="Measures engagement, conversion, retention, adoption, or satisfaction" /></div>
+      <div class="check-row"><span>8.</span><input type="text" value="Builds features used directly by customers" /></div>
+      <div class="check-row"><span>9.</span><input type="text" value="Includes mobile app or web application ownership" /></div>
+      <div class="check-row"><span>10.</span><input type="text" value="Uses AI to improve an end-user experience" /></div>
+      <div class="check-row"><span>11.</span><input type="text" value="Involves product discovery and experimentation" /></div>
+      <div class="check-row"><span>12.</span><input type="text" value="Gives the PM meaningful ownership over what gets built and why" /></div>
+    </div>
+    <p class="section-note">Downranks (not automatic Out unless they also fail the north star):</p>
+    <div class="flag-edit">
+      <div class="flag-row"><span>•</span><input type="text" value="Highly technical PM, unless the work is still customer-facing" /></div>
+      <div class="flag-row"><span>•</span><input type="text" value="Platform, infra, internal tools, or employee-only products" /></div>
+      <div class="flag-row"><span>•</span><input type="text" value="Developer platform, API-first, DevOps, SRE, data/ML infrastructure" /></div>
+    </div>
+
+    <h2>5. Where to look</h2>
+    <p class="section-note">Company career pages first. Boards second. Add any extra board as a URL. LinkedIn usually needs the seeker signed in on the bot’s computer once.</p>
+    <div class="boards">
+      <label><input type="checkbox" checked disabled /> Company career pages</label>
+      <label><input type="checkbox" checked disabled /> LinkedIn</label>
+      <label><input type="checkbox" checked disabled /> Built In</label>
+      <label><input type="checkbox" checked disabled /> Indeed</label>
+      <label><input type="checkbox" checked disabled /> Wellfound</label>
+      <label><input type="checkbox" checked disabled /> Wall Street Friends</label>
+    </div>
+    <div class="input-grid">
+      <div class="field span2"><label>Extra job board (URL)</label><input type="url" id="draft-extraboard" placeholder="https://jobs.example.org" /></div>
+      <div class="field span2"><label>Industries to prefer (hunt order)</label><textarea id="draft-industries" placeholder="1. Banking and consumer finance
+2. AI products people use
+3. Investing and wealth
+4. Payments and fintech
+…"></textarea></div>
+      <div class="field span2"><label>Company watchlist (optional, comma separated)</label><textarea id="draft-cos" placeholder="American Express, Capital One, Stripe, … Empty is fine. The bot can still hunt boards."></textarea></div>
+    </div>
+
+    <h2>6. How survivors get ranked</h2>
+    <p class="section-note">Defaults. A new seeker should not have to invent weights on day one. Location is small because office geography is already a hard out. They can move these later on Scoring, after a pattern of Revised Scores.</p>
+    <div class="weights-edit">
+      <table>
+        <thead><tr><th>Weight</th><th>Points</th><th>What earns it</th></tr></thead>
+        <tbody>
+          <tr><td>Role Quality Match</td><td>35</td><td>How well the posting matches the north star and checklist</td></tr>
+          <tr><td>Domain Match</td><td>20</td><td>Their industry and product type</td></tr>
+          <tr><td>Company Match</td><td>20</td><td>Watchlist and industry priority</td></tr>
+          <tr><td>Seniority Match</td><td>10</td><td>Title and scope vs the hunt order</td></tr>
+          <tr><td>Compensation Match</td><td>10</td><td>Posted floor at or above their minimum. No upper cap</td></tr>
+          <tr><td>Location Match</td><td>5</td><td>Already passed the geography gate</td></tr>
+          <tr><td>Tech-PM Penalty</td><td>−10</td><td>Technical-PM flavor on an otherwise customer role</td></tr>
+          <tr><td>Platform / infrastructure Penalty</td><td>−20</td><td>Infra or internal platform language</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="save-bar">
+      <button class="primary" type="button" id="save-draft" disabled>Not wired</button>
+      <span>This tab is a layout draft. It does not save, hunt, or change Wyatt’s Input.</span>
+    </div>
+  </section>
+
+  <section id="tab-rules" class="rules-page hidden">
+    <header>
+      <p class="kicker">JobSearchBot · Wyatt</p>
+      <h1>Hunt rules</h1>
+      <p class="sub">Every rule the Wyatt hunt is running today (gates cloned from Bryan until Wyatt’s profile exists). Flip On or Off; the change is sent for hunts to follow. Radios also save in this browser.</p>
+    </header>
+    <div class="banner">47 live rules. Gates throw a listing out. Craft checks feed the 4-of-12 bar and Role Quality. Process rules are how the hunt is run.</div>
+    <div class="toolbar">
+      <button class="ghost" type="button" id="copy-rules">Copy On/Off list</button>
+      <span id="rules-msg"></span>
+    </div>
+    <form name="wyatt-input-caps" method="POST" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="wyatt-input-caps" />
+      <input type="hidden" name="payload" />
+    </form>
+    <form name="wyatt-pursue-linkedin" method="POST" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="wyatt-pursue-linkedin" />
+      <input type="hidden" name="payload" id="pursue-li-payload" />
+    </form>
+    <form name="wyatt-hunt-rules" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="wyatt-hunt-rules" />
+      <p hidden><label>Don’t fill this<input name="bot-field" /></label></p>
+      <input type="hidden" name="payload" id="rules-payload" />
+    </form>
+    <table class="rules-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Rule</th>
+          <th>On</th>
+          <th>Off</th>
+        </tr>
+      </thead>
+      <tbody id="rules-rows"></tbody>
+    </table>
+  </section>
+
+  <section id="tab-listings" class="hidden">
+    <header>
+      <p class="kicker">JobSearchBot · Wyatt</p>
+      <h1>Ranked listings</h1>
+      <p class="sub">Open roles to review. Mark Applied and the job moves to the table below. Click any column header to sort. Pursue rows include a tailored resume PDF.</p>
+      <div class="attn" id="attn">THERE ARE SCORE MODIFICATIONS REQUIRING YOUR ATTENTION</div>
+    </header>
+    <div class="banner">Scan 2 Sep 2026. Watchlist careers plus LinkedIn, Built In, Indeed, Wellfound, and Wall Street Friends. Lavender rows (and the New tag) are listings added on this scan. The highlight moves to the newest scan on the next run.</div>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Filter title, company, why…" />
+      <label class="new-filter"><input type="checkbox" id="only-new" /> New this scan</label>
+      <select id="band">
+        <option value="">All bands</option>
+        <option>Pursue</option>
+        <option>Apply</option>
+        <option>Maybe</option>
+        <option>Skip</option>
+        <option>Out</option>
+      </select>
+      <select id="cat">
+        <option value="">All categories</option>
+        <option>Banking / consumer finance</option>
+        <option>Artificial Intelligence</option>
+        <option>Investing / wealth</option>
+        <option>Payments / fintech</option>
+        <option>E-commerce</option>
+        <option>Big tech</option>
+        <option>Travel</option>
+        <option>Media</option>
+        <option>Asset management</option>
+        <option>E-commerce / marketplace</option>
+        <option>Media / sports</option>
+        <option>Enterprise SaaS</option>
+        <option>Travel / transportation</option>
+        <option>Consumer / health</option>
+        <option>Consumer / lifestyle</option>
+        <option>Ticketing</option>
+        <option>Consumer / commerce</option>
+        <option>Consumer / marketplace</option>
+        <option>Consumer / telecom</option>
+        <option>Sports / fitness / lifestyle</option>
+      </select>
+      <span id="discarded-note"></span>
+      <button class="ghost" id="restore" type="button">Restore discarded</button>
+    </div>
+    <h2>Open <span class="count" id="open-count"></span></h2>
+    <p class="section-note">Jobs not yet applied to. Discard removes them from future hunts. Applied, Revised Score, and Keep/Discard stay in this browser only.</p>
+    <div class="wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-table="open" data-k="effective">Score</th>
+            <th data-table="open" data-k="overrideSort">Revised Score</th>
+            <th data-table="open" data-k="checksSort">Checklist</th>
+            <th data-table="open" data-k="postedSort">First Posted</th>
+            <th data-table="open" data-k="band">Band</th>
+            <th data-table="open" data-k="title">Role</th>
+            <th data-table="open" data-k="company">Company</th>
+            <th data-table="open" data-k="category">Category</th>
+            <th data-table="open" data-k="location">Location</th>
+            <th data-table="open" data-k="comp">Base</th>
+            <th data-table="open" data-k="why">Why</th>
+          <th data-table="open" data-k="resumeSort">Revised Resume</th>
+            <th data-table="open" data-k="appliedSort">Applied</th>
+            <th data-table="open" data-k="keepSort">Keep / discard</th>
+          </tr>
+        </thead>
+        <tbody id="rows-open"></tbody>
+      </table>
+    </div>
+    <h2>Applied <span class="count" id="applied-count"></span></h2>
+    <p class="section-note">Resumes sent. Not applied sends a job back to Open. Discard still removes it for good.</p>
+    <div class="wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-table="applied" data-k="effective">Score</th>
+            <th data-table="applied" data-k="overrideSort">Revised Score</th>
+            <th data-table="applied" data-k="checksSort">Checklist</th>
+            <th data-table="applied" data-k="postedSort">First Posted</th>
+            <th data-table="applied" data-k="band">Band</th>
+            <th data-table="applied" data-k="title">Role</th>
+            <th data-table="applied" data-k="company">Company</th>
+            <th data-table="applied" data-k="category">Category</th>
+            <th data-table="applied" data-k="location">Location</th>
+            <th data-table="applied" data-k="comp">Base</th>
+            <th data-table="applied" data-k="why">Why</th>
+          <th data-table="applied" data-k="resumeSort">Revised Resume</th>
+            <th data-table="applied" data-k="appliedSort">Applied</th>
+            <th data-table="applied" data-k="keepSort">Keep / discard</th>
+          </tr>
+        </thead>
+        <tbody id="rows-applied"></tbody>
+      </table>
+    </div>
+    <p class="pad">Revised Score overrides the model score. After several of those in the same direction, I propose a weight change on the Scoring tab instead of rewriting the model off one listing.</p>
+  </section>
+
+  <section id="tab-scoring" class="hidden">
+    <header>
+      <p class="kicker">JobSearchBot · scoring model</p>
+      <h1>Score revisions</h1>
+      <p class="sub">Baseline stays. Each accepted tweak becomes a new column. A proposed column is live only after you Accept. Discard forgets it.</p>
+    </header>
+    <p class="section-note">A change is proposed only after a pattern across several of Wyatt’s score overrides, not a single bump.</p>
+    <div class="score-layout">
+      <div class="weights" id="weights-wrap"></div>
+      <aside class="rationale" id="rationale"></aside>
+    </div>
+  </section>
+
+  <script>
+    const KEYS = ["role", "domain", "company", "seniority", "comp", "location"];
+    const PENALTY = ["tech", "platform"];
+    const LABELS = {
+      role: "Role Quality Match",
+      domain: "Domain Match",
+      company: "Company Match",
+      seniority: "Seniority Match",
+      comp: "Compensation Match",
+      location: "Location Match",
+      tech: "Tech-PM Penalty",
+      platform: "Platform / infrastructure Penalty"
+    };
+
+    const BASELINE = { role: 35, domain: 20, company: 20, seniority: 10, comp: 10, location: 5, tech: -10, platform: -20 };
+
+    const SCAN_DATE = "2026-09-02";
+    const RULES_STORE = "wyatt-job-tracker-rules-v1";
+    const RULES = [{"id": 1, "group": "Gates", "text": "After reading a posting, the hire should spend most of their time on products real customers or users experience. Apply this before the craft checklist.", "on": true}, {"id": 2, "group": "Gates", "text": "Drop roles whose main work is internal tools, employee-only platforms, or company infrastructure, even at a favorite company.", "on": true}, {"id": 3, "group": "Gates", "text": "Do not keep Associate, Junior, entry-level, or APM titles.", "on": true}, {"id": 4, "group": "Gates", "text": "If the posting requires coding, a computer-science degree, or hands-on software engineering, mark the listing Out.", "on": true}, {"id": 5, "group": "Gates", "text": "If the job is in-office or a normal hybrid (including hybrid with no travel details), the desk must be in Manhattan or Jersey City.", "on": true}, {"id": 6, "group": "Gates", "text": "If the job is truly remote in the US, do not require a Manhattan or Jersey City office.", "on": true}, {"id": 7, "group": "Gates", "text": "Treat hybrid as remote only when the posting itself says onsite is monthly or less, quarterly, or occasional. Do not infer that from the word hybrid alone.", "on": true}, {"id": 8, "group": "Gates", "text": "If base pay is posted and the bottom of the range is under $150k, the listing is Out. There is no maximum. Missing pay does not fail this gate.", "on": true}, {"id": 9, "group": "Score", "text": "A listing must hit at least 4 of the 12 craft checks (rules 33–44). Below that it is too weak to keep, even at a preferred company.", "on": true}, {"id": 10, "group": "Score", "text": "Listings that pass the gates get a 100-point score: how well the role fits (35), industry (20), company (20), seniority (10), pay (10), location (5).", "on": true}, {"id": 11, "group": "Score", "text": "Subtract 10 points if the role has a technical-PM flavor but is still customer-facing.", "on": true}, {"id": 12, "group": "Score", "text": "Subtract 20 points if platform, infrastructure, APIs, or DevOps is the core of the job.", "on": true}, {"id": 13, "group": "Score", "text": "80 or above is Pursue, 65–79 Apply, 50–64 Maybe, under 50 Skip. A failed gate scores 0 and shows as Out.", "on": true}, {"id": 14, "group": "Score", "text": "Location is only 5 points because Manhattan/Jersey City (or true remote) is already a hard pass/fail. Most listings that survive get the full 5.", "on": true}, {"id": 15, "group": "Score", "text": "Do not change scoring weights from one Revised Score. Propose a tweak only after several overrides show the same pattern.", "on": true}, {"id": 16, "group": "Hunt", "text": "Search titles in this order: Senior Product Manager, then Lead, Principal, Group, then Director of Product.", "on": true}, {"id": 17, "group": "Hunt", "text": "A title that is only “Product Manager” still counts if the work and pay look senior.", "on": true}, {"id": 18, "group": "Hunt", "text": "Those titles are what we search for, not a closed list. A close variant can still count.", "on": true}, {"id": 19, "group": "Hunt", "text": "Look first on each watchlist company’s own careers page, not only on job boards.", "on": true}, {"id": 20, "group": "Hunt", "text": "Also search LinkedIn, Built In, Indeed, Wellfound, and Wall Street Friends.", "on": true}, {"id": 21, "group": "Hunt", "text": "Watchlist categories (banking first, then AI, then investing, and so on) set hunt order and how much Company Match a listing gets.", "on": true}, {"id": 22, "group": "Process", "text": "Never make up a job that was not actually posted.", "on": true}, {"id": 23, "group": "Process", "text": "If a careers page looks empty or is blocked by scripts, open the real site in a browser before calling that company blocked.", "on": true}, {"id": 24, "group": "Process", "text": "The bot may click a simple “I’m not a robot” box. Image puzzles or Cloudflare challenges are handed to Rich to complete.", "on": true}, {"id": 25, "group": "Process", "text": "Do not ask for, store, or use passwords. Do not try to get around bot protection.", "on": true}, {"id": 26, "group": "Process", "text": "For every Pursue listing, make a one-page resume from Bryan’s real facts, with the summary and bullet order shifted to that employer.", "on": true}, {"id": 27, "group": "Process", "text": "Lavender rows and the New tag mark listings added on the latest scan only. The next scan moves that highlight.", "on": true}, {"id": 28, "group": "Process", "text": "Dual US and Canadian citizenship can help on some roles. Do not default the hunt to Canadian jobs unless the role is remote or otherwise a fit.", "on": true}, {"id": 29, "group": "Process", "text": "AI, chat, or personalization PM roles score up when they are product and client-facing, not when they need a machine-learning engineer in a PM title.", "on": true}, {"id": 30, "group": "Process", "text": "Bryan is not an engineer. Heavily technical PM roles score down. Customer-problem and experience roles are preferred.", "on": true}, {"id": 31, "group": "Process", "text": "Ping Rich when a full hunt is scored and published. Do not ping on partial batches.", "on": true}, {"id": 32, "group": "Process", "text": "Run the full company-and-board scan on weekdays at 9pm ET and publish new listings.", "on": true}, {"id": 33, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM owns a web or mobile product that customers actually use.", "on": true}, {"id": 34, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM works closely with product designers or UX researchers.", "on": true}, {"id": 35, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM owns or strongly influences the look and feel of the product.", "on": true}, {"id": 36, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the work is about improving a customer’s path through the product.", "on": true}, {"id": 37, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM owns product strategy and the roadmap.", "on": true}, {"id": 38, "group": "Craft", "text": "Counts toward the 4-of-12 bar: decisions use customer research or how people actually behave in the product.", "on": true}, {"id": 39, "group": "Craft", "text": "Counts toward the 4-of-12 bar: success is measured by engagement, conversion, retention, adoption, or satisfaction.", "on": true}, {"id": 40, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the team ships features customers use directly.", "on": true}, {"id": 41, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM owns a mobile app or web application, not only a backend or process.", "on": true}, {"id": 42, "group": "Craft", "text": "Counts toward the 4-of-12 bar: AI is used to make the customer’s experience better, not only internal ops.", "on": true}, {"id": 43, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the job includes discovering what to build and testing it, not only delivery.", "on": true}, {"id": 44, "group": "Craft", "text": "Counts toward the 4-of-12 bar: the PM has real say in what gets built and why.", "on": true}, {"id": 45, "group": "Process", "text": "When a listing’s link is a job board, prefer the same job on the company’s own careers site. If that does not exist, prefer the LinkedIn posting so Bryan can apply there. Keep the original board link only if neither is available.", "on": true}, {"id": 46, "group": "Gates", "text": "If a listing came from LinkedIn and it is in Pursue (score 80+, including a Revised Score that moves it into Pursue), check how many people have applied on LinkedIn. More than 100 applicants (Bryan’s number; the Draft Input field can set a different cap) makes the listing Out with score 0. LinkedIn is the only source that shows this count.", "on": true}, {"id": 47, "group": "Gates", "text": "If a posting is a repost (the page says Reposted, or the same req is brought back as if it were new), do not treat it as a new listing unless the Input radio “Treat Reposted Jobs as New entries?” is Yes. Bryan’s setting is No: a reposted job is Out with score 0, even if it otherwise fits.", "on": true}];
+    const JOBS = [];
+
+    const RESUMES = {};
+
+    const STORE = "wyatt-job-tracker-v1";
+    if (RESUMES["openai-chat"]) {
+      RESUMES["anthropic-growth"] = RESUMES["openai-chat"];
+    }
+    if (RESUMES["sofi-growth"]) {
+      RESUMES["c1-teen-checking"] = RESUMES["sofi-growth"];
+      RESUMES["citi-svp-retail"] = RESUMES["sofi-growth"];
+    }
+
+    function defaultState() {
+      return {
+        discarded: [],
+        overrides: {},
+        applied: {},
+        history: [
+          { id: "v0", label: "Baseline", status: "accepted", weights: { ...BASELINE }, note: "Beta start. No seeker overrides yet, so no proposed change." }
+        ],
+        pending: null
+      };
+    }
+    function loadState() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORE));
+        if (!s || !s.history) return defaultState();
+        return s;
+      } catch { return defaultState(); }
+    }
+    const SHARED_OWNER = "richardkhowe";
+    const SHARED_REPO = "wyatt-job-tracker-state";
+    const SHARED_PATH = "state.json";
+    const SHARED_BRANCH = "main";
+    const SHARED_RAW_URL = "https://raw.githubusercontent.com/" + SHARED_OWNER + "/" + SHARED_REPO + "/" + SHARED_BRANCH + "/" + SHARED_PATH;
+    const SHARED_CONTENTS_URL = "https://api.github.com/repos/" + SHARED_OWNER + "/" + SHARED_REPO + "/contents/" + SHARED_PATH;
+    const TRACKER_STATE_TOKEN = "";
+    function trackerStateToken() {
+      return (typeof window !== "undefined" && window.__TRACKER_STATE_TOKEN) || TRACKER_STATE_TOKEN || "";
+    }
+    function sharedSlice(s) {
+      return {
+        discarded: Array.isArray(s.discarded) ? s.discarded : [],
+        overrides: s.overrides && typeof s.overrides === "object" ? s.overrides : {},
+        applied: s.applied && typeof s.applied === "object" ? s.applied : {},
+        updatedAt: s.updatedAt || 0
+      };
+    }
+    function applyShared(part) {
+      if (!part || typeof part !== "object") return;
+      if (Array.isArray(part.discarded)) state.discarded = part.discarded;
+      if (part.overrides && typeof part.overrides === "object") state.overrides = part.overrides;
+      if (part.applied && typeof part.applied === "object") state.applied = part.applied;
+      state.updatedAt = part.updatedAt || Date.now();
+    }
+    function localHasMarks(s) {
+      return Object.keys(s.applied || {}).length > 0 ||
+        (s.discarded || []).length > 0 ||
+        Object.keys(s.overrides || {}).length > 0;
+    }
+    function decodeGithubBase64(b64) {
+      const bin = atob(String(b64 || "").replace(/\s/g, ""));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }
+    async function fetchSharedJson() {
+      const raw = await fetch(SHARED_RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
+      if (raw.ok) return raw.json();
+      const api = await fetch(SHARED_CONTENTS_URL + "?ref=" + SHARED_BRANCH, {
+        cache: "no-store",
+        headers: { Accept: "application/vnd.github.raw+json" }
+      });
+      if (api.ok) {
+        const ct = api.headers.get("content-type") || "";
+        if (ct.includes("json") || ct.includes("raw")) {
+          try { return await api.json(); } catch { return null; }
+        }
+        return JSON.parse(await api.text());
+      }
+      const meta = await fetch(SHARED_CONTENTS_URL + "?ref=" + SHARED_BRANCH, { cache: "no-store" });
+      if (!meta.ok) return null;
+      const body = await meta.json();
+      if (!body || !body.content) return null;
+      return JSON.parse(decodeGithubBase64(body.content));
+    }
+    let pushTimer = null;
+    let lastSeenRemote = 0;
+    let pushing = false;
+    function saveState() {
+      localStorage.setItem(STORE, JSON.stringify(state));
+    }
+    async function pushShared() {
+      if (pushing) return;
+      const token = trackerStateToken();
+      if (!token) return;
+      pushing = true;
+      state.updatedAt = Date.now();
+      localStorage.setItem(STORE, JSON.stringify(state));
+      try {
+        const slice = sharedSlice(state);
+        const payload = JSON.stringify(slice);
+        const meta = await fetch(SHARED_CONTENTS_URL + "?ref=" + SHARED_BRANCH, {
+          cache: "no-store",
+          headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + token }
+        });
+        let sha = "";
+        if (meta.ok) {
+          const info = await meta.json();
+          sha = info && info.sha ? info.sha : "";
+        }
+        const res = await fetch(SHARED_CONTENTS_URL, {
+          method: "PUT",
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "update tracker shared state",
+            content: btoa(unescape(encodeURIComponent(payload))),
+            sha: sha || undefined,
+            branch: SHARED_BRANCH
+          })
+        });
+        if (res.ok) lastSeenRemote = Number(slice.updatedAt) || state.updatedAt;
+      } catch (e) {}
+      pushing = false;
+    }
+    async function pullShared() {
+      try {
+        const part = await fetchSharedJson();
+        if (!part) return;
+        const remoteAt = Number(part && part.updatedAt) || 0;
+        const remoteHas = part && localHasMarks(part);
+        if (!remoteAt && !remoteHas && localHasMarks(state)) {
+          await pushShared();
+          return;
+        }
+        if (remoteAt && remoteAt > lastSeenRemote && remoteAt !== state.updatedAt) {
+          applyShared(part);
+          lastSeenRemote = remoteAt;
+          localStorage.setItem(STORE, JSON.stringify(state));
+          render();
+        } else if (remoteAt) {
+          lastSeenRemote = Math.max(lastSeenRemote, remoteAt);
+        }
+      } catch (e) {}
+    }
+    let state = loadState();
+
+    function currentWeights() {
+      const accepted = state.history.filter(h => h.status === "accepted");
+      return { ...accepted[accepted.length - 1].weights };
+    }
+    function liApplicantMax() {
+      const el = document.getElementById("in-li-apps");
+      const n = el ? Number(el.value) : 100;
+      return (Number.isFinite(n) && n > 0) ? n : 100;
+    }
+    function linkedInSourced(job) {
+      return !!(job.fromLinkedIn || job.linkedinUrl || (job.url && String(job.url).indexOf("linkedin.com") !== -1));
+    }
+    function applicantGateHits(job) {
+      if (!linkedInSourced(job)) return false;
+      if (job.liApplicants == null || job.liApplicants === "") return false;
+      return Number(job.liApplicants) > liApplicantMax();
+    }
+    function treatRepostedAsNew() {
+      const yes = document.getElementById("in-repost-new-yes");
+      return !!(yes && yes.checked);
+    }
+    function isReposted(job) {
+      return !!(job && job.reposted);
+    }
+    function repostGateHits(job) {
+      return isReposted(job) && !treatRepostedAsNew();
+    }
+    function botScore(job) {
+      if (job.gated) return 0;
+      if (repostGateHits(job)) return 0;
+      const w = currentWeights();
+      let s = 0;
+      KEYS.forEach(k => s += job.fit[k] * w[k]);
+      PENALTY.forEach(k => s += job.fit[k] * w[k]);
+      s = Math.max(0, Math.round(s));
+      if (s >= 80 && applicantGateHits(job)) return 0;
+      return s;
+    }
+    function bandFor(score) {
+      if (score <= 0) return "Out";
+      if (score >= 80) return "Pursue";
+      if (score >= 65) return "Apply";
+      if (score >= 50) return "Maybe";
+      return "Skip";
+    }
+    function bandClass(b) {
+      return ({ Pursue: "pursue", Apply: "apply", Maybe: "maybe", Skip: "skip", Out: "out" })[b] || "";
+    }
+    function effective(job) {
+      if (repostGateHits(job)) return 0;
+      const o = state.overrides[job.id];
+      const s = (o === undefined || o === null || o === "") ? botScore(job) : Number(o);
+      if (s >= 80 && applicantGateHits(job)) return 0;
+      return s;
+    }
+    function formatPosted(iso) {
+      if (!iso) return "—";
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return String(iso);
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return months[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1];
+    }
+    function postedStamp(iso) {
+      if (!iso) return 0;
+      const n = Date.parse(iso);
+      return Number.isNaN(n) ? 0 : n;
+    }
+    function resumeCell(j) {
+      const r = RESUMES[j.id];
+      if (j.band !== "Pursue" || !r) return "—";
+      return `<a class="pdf" download="${r.file}" href="${r.href}">PDF</a>`;
+    }
+    function checksNum(s) {
+      const m = String(s).match(/^(\d+)/);
+      return m ? Number(m[1]) : -1;
+    }
+    function hasPending() { return !!(state.pending && state.pending.status === "proposed"); }
+
+    const sorts = { open: { key: "effective", dir: -1 }, applied: { key: "effective", dir: -1 } };
+    const q = document.getElementById("q");
+    const band = document.getElementById("band");
+    const cat = document.getElementById("cat");
+    const onlyNew = document.getElementById("only-new");
+    const note = document.getElementById("discarded-note");
+
+
+    function loadRuleState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(RULES_STORE) || "{}");
+        RULES.forEach(r => {
+          if (saved[r.id] === true || saved[r.id] === false) r.on = saved[r.id];
+        });
+      } catch (e) {}
+    }
+    function saveRuleState() {
+      const out = {};
+      RULES.forEach(r => { out[r.id] = !!r.on; });
+      localStorage.setItem(RULES_STORE, JSON.stringify(out));
+      queueRulesPush();
+    }
+    let rulesPushTimer = null;
+    function queueRulesPush() {
+      clearTimeout(rulesPushTimer);
+      rulesPushTimer = setTimeout(pushRulesToHunt, 800);
+    }
+    function pushRulesToHunt() {
+      const payload = JSON.stringify(RULES.map(r => ({ id: r.id, on: !!r.on, text: r.text, group: r.group })));
+      const body = new URLSearchParams();
+      body.set("form-name", "wyatt-hunt-rules");
+      body.set("payload", payload);
+      const msg = document.getElementById("rules-msg");
+      fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+      }).then(res => {
+        if (msg) msg.textContent = res.ok ? "Saved for hunts." : "Save failed. Try again.";
+      }).catch(() => {
+        if (msg) msg.textContent = "Save failed. Try again.";
+      });
+    }
+    function renderRules() {
+      const tb = document.getElementById("rules-rows");
+      if (!tb) return;
+      let last = "";
+      let html = "";
+      RULES.forEach(r => {
+        if (r.group !== last) {
+          last = r.group;
+          html += `<tr class="group-row"><td colspan="4">${r.group}</td></tr>`;
+        }
+        html += `<tr>
+          <td class="n">${r.id}</td>
+          <td class="rule">${r.text}</td>
+          <td class="toggle"><label><input type="radio" name="rule-${r.id}" value="on" data-rule="${r.id}" ${r.on ? "checked" : ""} /> On</label></td>
+          <td class="toggle"><label><input type="radio" name="rule-${r.id}" value="off" data-rule="${r.id}" ${r.on ? "" : "checked"} /> Off</label></td>
+        </tr>`;
+      });
+      tb.innerHTML = html;
+    }
+    loadRuleState();
+    document.addEventListener("change", (e) => {
+      const t = e.target;
+      if (!t || !t.dataset || !t.dataset.rule) return;
+      const id = Number(t.dataset.rule);
+      const rule = RULES.find(r => r.id === id);
+      if (!rule) return;
+      rule.on = t.value === "on";
+      saveRuleState();
+    });
+    const copyRulesBtn = document.getElementById("copy-rules");
+    if (copyRulesBtn) {
+      copyRulesBtn.addEventListener("click", async () => {
+        const lines = RULES.map(r => `${r.id} ${r.on ? "ON" : "OFF"}  ${r.text}`).join("\n");
+        try {
+          await navigator.clipboard.writeText(lines);
+          document.getElementById("rules-msg").textContent = "Copied.";
+        } catch (err) {
+          document.getElementById("rules-msg").textContent = "Copy failed. Select the table instead.";
+        }
+      });
+    }
+
+
+    function queuePursueLinkedInCheck(job) {
+      if (!job || !linkedInSourced(job)) return;
+      const s = effective(job);
+      if (s < 80 && !(state.overrides[job.id] >= 80)) return;
+      if (job.liApplicants != null && job.liApplicants !== "") return;
+      const body = new URLSearchParams();
+      body.set("form-name", "wyatt-pursue-linkedin");
+      body.set("payload", JSON.stringify({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        linkedinUrl: job.linkedinUrl || job.url,
+        at: new Date().toISOString()
+      }));
+      fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }).catch(() => {});
+    }
+
+    function showTab(name) {
+      document.getElementById("tab-input").classList.toggle("hidden", name !== "input");
+      document.getElementById("tab-draft").classList.toggle("hidden", name !== "draft");
+      document.getElementById("tab-listings").classList.toggle("hidden", name !== "listings");
+      document.getElementById("tab-scoring").classList.toggle("hidden", name !== "scoring");
+      document.getElementById("tab-rules").classList.toggle("hidden", name !== "rules");
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
+    }
+    document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    renderRules();
+    document.getElementById("attn").addEventListener("click", () => showTab("scoring"));
+
+    function enriched(j) {
+      const bot = botScore(j);
+      return {
+        ...j,
+        score: bot,
+        effective: effective(j),
+        band: bandFor(effective(j)),
+        applied: !!state.applied[j.id],
+        appliedSort: state.applied[j.id] ? 1 : 0,
+        overrideSort: state.overrides[j.id] === undefined || state.overrides[j.id] === "" ? -1 : Number(state.overrides[j.id]),
+        checksSort: checksNum(j.checks),
+        resumeSort: (bandFor(effective(j)) === "Pursue" && RESUMES[j.id]) ? 1 : 0,
+        postedSort: postedStamp(j.posted),
+        keepSort: 0
+      };
+    }
+    function isNewThisScan(j) {
+      return j.added === SCAN_DATE;
+    }
+    function filtered(list) {
+      const query = q.value.toLowerCase();
+      return list
+        .filter(j => !onlyNew.checked || isNewThisScan(j))
+        .filter(j => !band.value || j.band === band.value)
+        .filter(j => !cat.value || j.category === cat.value)
+        .filter(j => !query || [j.title, j.company, j.why, j.location].join(" ").toLowerCase().includes(query));
+    }
+    function sorted(list, table) {
+      const { key, dir } = sorts[table];
+      return [...list].sort((a, b) => {
+        const av = a[key], bv = b[key];
+        if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+        return String(av ?? "").localeCompare(String(bv ?? "")) * dir;
+      });
+    }
+    function rowHtml(j) {
+      const overridden = state.overrides[j.id] !== undefined && state.overrides[j.id] !== "";
+      const shown = overridden ? state.overrides[j.id] : "";
+      const isNew = isNewThisScan(j);
+      return `
+        <tr data-id="${j.id}" class="${isNew ? "new-run" : ""}">
+          <td>
+            <div class="score ${overridden ? "revised" : ""}">${j.effective}</div>
+            ${overridden ? `<div class="bot-score">was ${j.score}</div>` : ""}
+          </td>
+          <td>
+            <input type="number" min="0" max="100" step="1" inputmode="numeric"
+              value="${shown}" placeholder="${j.score}" data-override="${j.id}" />
+          </td>
+          <td class="checks">${j.checks}</td>
+          <td class="posted">${formatPosted(j.posted)}</td>
+          <td><span class="band ${bandClass(j.band)}">${j.band}</span></td>
+          <td><a class="title" href="${j.url}" target="_blank" rel="noopener">${j.title}</a>${isNew ? '<span class="new-tag">New</span>' : ""}</td>
+          <td>${j.company}</td>
+          <td>${j.category}</td>
+          <td>${j.location}</td>
+          <td>${j.comp}</td>
+          <td class="why">${j.why}${repostGateHits(j) ? " Reposted. Out." : ""}${applicantGateHits(j) ? " LinkedIn applicants over cap (" + j.liApplicants + " &gt; " + liApplicantMax() + "). Out." : (j.liApplicants != null && linkedInSourced(j) ? " LinkedIn applicants: " + j.liApplicants + "." : "")}</td>
+          <td class="resume-cell">${resumeCell(j)}</td>
+          <td class="actions">
+            <label class="applied"><input type="radio" name="applied-${j.id}" value="yes" data-applied="${j.id}" ${j.applied ? "checked" : ""} /> Applied</label>
+            <label><input type="radio" name="applied-${j.id}" value="no" data-applied="${j.id}" ${j.applied ? "" : "checked"} /> Not applied</label>
+          </td>
+          <td class="actions">
+            <label><input type="radio" name="keep-${j.id}" value="keep" checked /> Keep</label>
+            <label class="discard"><input type="radio" name="keep-${j.id}" value="discard" data-discard="${j.id}" /> Discard</label>
+          </td>
+        </tr>`;
+    }
+    function paintTable(tbodyId, list, table) {
+      const tbody = document.getElementById(tbodyId);
+      document.querySelectorAll(`th[data-table="${table}"]`).forEach(th => {
+        th.classList.toggle("sorted", th.dataset.k === sorts[table].key);
+        th.classList.toggle("asc", th.dataset.k === sorts[table].key && sorts[table].dir === 1);
+      });
+      if (!list.length) {
+        const msg = table === "applied"
+          ? "Nothing applied yet. Mark Applied on a job above and it will show up here."
+          : "No open listings.";
+        tbody.innerHTML = `<tr><td class="empty" colspan="14">${msg}</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(rowHtml).join("");
+    }
+
+    function columns() {
+      const cols = [...state.history];
+      if (state.pending) cols.push(state.pending);
+      return cols;
+    }
+    function cellClass(cols, i, key) {
+      if (i === 0) return "";
+      const prev = cols[i - 1].weights[key];
+      const cur = cols[i].weights[key];
+      if (cur > prev) return "up";
+      if (cur < prev) return "down";
+      return "";
+    }
+    function renderScoring() {
+      const cols = columns();
+      const pending = hasPending();
+      const keys = [...KEYS, ...PENALTY];
+      let head = `<th>Weight</th>`;
+      cols.forEach((c, i) => {
+        const last = i === cols.length - 1 && c.status === "proposed";
+        head += `<th class="${last ? "pending-head" : ""}">${c.label}`;
+        if (last) {
+          head += `<div class="radios-top">
+            <label class="accept"><input type="radio" name="proposal" value="accept" /> Accept</label>
+            <label class="reject"><input type="radio" name="proposal" value="discard" /> Discard</label>
+          </div>`;
+        }
+        head += `</th>`;
+      });
+      let body = keys.map(k => {
+        let row = `<td>${LABELS[k]}</td>`;
+        cols.forEach((c, i) => {
+          row += `<td class="${cellClass(cols, i, k)}">${c.weights[k]}</td>`;
+        });
+        return `<tr>${row}</tr>`;
+      }).join("");
+      document.getElementById("weights-wrap").innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+      const box = document.getElementById("rationale");
+      if (pending) {
+        box.innerHTML = `<h3>Why this change</h3><p>${state.pending.note}</p>
+          <ul><li>Need several seeker overrides in the same direction before a proposal.</li><li>Accept applies it to live scoring. Discard forgets this column.</li></ul>`;
+      } else {
+        box.innerHTML = `<h3>No pending change</h3><p>Accepted columns stay so you can see how the model moved. Rationale only shows while a proposal is waiting.</p>`;
+      }
+    }
+
+    function render() {
+      const pending = hasPending();
+      document.getElementById("attn").classList.toggle("show", pending);
+      document.getElementById("score-dot").classList.toggle("hidden", !pending);
+      note.textContent = state.discarded.length
+        ? `${state.discarded.length} discarded (won’t come back on future hunts)`
+        : "";
+      const visible = JOBS.filter(j => !state.discarded.includes(j.id)).map(enriched);
+      const open = sorted(filtered(visible.filter(j => !j.applied)), "open");
+      const applied = sorted(filtered(visible.filter(j => j.applied)), "applied");
+      document.getElementById("open-count").textContent = `(${open.length})`;
+      document.getElementById("applied-count").textContent = `(${applied.length})`;
+      paintTable("rows-open", open, "open");
+      paintTable("rows-applied", applied, "applied");
+      renderScoring();
+    }
+
+    function onTableChange(e) {
+      const discardId = e.target.dataset.discard;
+      if (discardId && e.target.value === "discard") {
+        state.discarded.push(discardId);
+        saveState(); render(); return;
+      }
+      const appliedId = e.target.dataset.applied;
+      if (appliedId) {
+        if (e.target.value === "yes") state.applied[appliedId] = true;
+        else delete state.applied[appliedId];
+        saveState(); render(); return;
+      }
+      const overrideId = e.target.dataset.override;
+      if (overrideId) {
+        const v = e.target.value;
+        if (v === "") delete state.overrides[overrideId];
+        else state.overrides[overrideId] = Math.max(0, Math.min(100, Number(v)));
+        saveState(); render();
+        const job = JOBS.find(j => j.id === overrideId);
+        if (job) queuePursueLinkedInCheck(job);
+      }
+    }
+    document.getElementById("rows-open").addEventListener("change", onTableChange);
+    document.getElementById("rows-applied").addEventListener("change", onTableChange);
+
+    document.getElementById("weights-wrap").addEventListener("change", (e) => {
+      if (e.target.name !== "proposal" || !state.pending) return;
+      if (e.target.value === "accept") {
+        state.history.push({ ...state.pending, status: "accepted", label: state.pending.id + " accepted", note: "" });
+        state.pending = null;
+      } else if (e.target.value === "discard") {
+        state.pending = null;
+      }
+      saveState();
+      render();
+    });
+
+    document.getElementById("restore").addEventListener("click", () => {
+      const keep = { history: state.history, pending: state.pending };
+      state = defaultState();
+      state.history = keep.history;
+      state.pending = keep.pending;
+      saveState();
+      render();
+    });
+
+    document.querySelectorAll("th[data-k]").forEach(th => {
+      th.addEventListener("click", () => {
+        const table = th.dataset.table;
+        const k = th.dataset.k;
+        if (sorts[table].key === k) sorts[table].dir *= -1;
+        else {
+          sorts[table].key = k;
+          sorts[table].dir = (k === "effective" || k === "overrideSort" || k === "checksSort" || k === "appliedSort" || k === "resumeSort" || k === "postedSort") ? -1 : 1;
+        }
+        render();
+      });
+    });
+    [q, band, cat, onlyNew].forEach(el => el.addEventListener("input", render));
+    const INPUT_STORE = "wyatt-job-tracker-input-v1";
+    function liAppsFromInput() {
+      const el = document.getElementById("in-li-apps");
+      const n = el ? Number(el.value) : 100;
+      return (Number.isFinite(n) && n > 0) ? n : 100;
+    }
+    function treatRepostedFromInput() {
+      const yes = document.getElementById("in-repost-new-yes");
+      return !!(yes && yes.checked);
+    }
+    function loadInput() {
+      try {
+        const s = JSON.parse(localStorage.getItem(INPUT_STORE) || "{}");
+        if (s.liApps) {
+          const el = document.getElementById("in-li-apps");
+          if (el) el.value = s.liApps;
+        }
+        if (s.treatRepostedAsNew === true) {
+          const yes = document.getElementById("in-repost-new-yes");
+          const no = document.getElementById("in-repost-new-no");
+          if (yes) yes.checked = true;
+          if (no) no.checked = false;
+        }
+      } catch (e) {}
+    }
+    function saveInput() {
+      const liApps = liAppsFromInput();
+      const treatRepostedAsNew = treatRepostedFromInput();
+      localStorage.setItem(INPUT_STORE, JSON.stringify({ liApps, treatRepostedAsNew }));
+      const msg = document.getElementById("save-msg");
+      if (msg) msg.textContent = "Saved. LinkedIn applicant cap is " + liApps + ". Reposts as new: " + (treatRepostedAsNew ? "Yes" : "No") + ".";
+      const body = new URLSearchParams();
+      body.set("form-name", "wyatt-input-caps");
+      body.set("payload", JSON.stringify({ liApplicantMax: liApps, treatRepostedAsNew, at: new Date().toISOString() }));
+      fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }).catch(() => {});
+      render();
+    }
+    loadInput();
+    const saveBtn = document.getElementById("save-input");
+    if (saveBtn) saveBtn.addEventListener("click", saveInput);
+    const liAppsEl = document.getElementById("in-li-apps");
+    if (liAppsEl) liAppsEl.addEventListener("change", () => { render(); });
+    document.querySelectorAll("input[name=in-repost-new]").forEach(el => el.addEventListener("change", () => { render(); }));
+    const resumeInput = document.getElementById("in-resume");
+    if (resumeInput) resumeInput.addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      document.getElementById("in-resume-name").textContent = f ? ("Selected: " + f.name) : "No resume on file";
+    });
+    render();
+  </script>
+</body>
+</html>
